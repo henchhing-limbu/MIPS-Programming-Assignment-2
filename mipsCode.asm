@@ -21,7 +21,7 @@
 		beq $t1, 10, noInput	#branches to noInput if $t1 == end of line
 		
 		li $t6, 0				 #initializing $t6 to be 0
-		li $t5, 0 				 #initializing $s2 to be 0
+		li $t5, 0 				 #initializing $t5 to be 0
 		li $t1, 0				 #used for knowing the last substring
 		loop:
 			#checks for spaces at the front and end of string and removes it
@@ -66,6 +66,7 @@
 				j loopEndIndex
 			#endIndex is in $t4
 			
+			continue3:
 			addi $t6, $t6, 1			 #incrementing $t6 by 1
 			addi $t5, $t6, 0			 #$t5 = $t6	
 		
@@ -92,11 +93,25 @@
 	
 	#converts a single hexadecimal string to a decimal string		
 	subProgram_2:
+		li $s2, 0 				 #initializing $s2 to be 0
+							 #the converted decimal value will be stored here
+		
+		#checking the length of the substring and checking its validity
 		sub $t3, $t4, $t5			 #subtracts $t4 from $t5 and stores the result in $t3
 		li $t7, 8
 		blt $t3, $t7, continue2			 #goes to continue2 if $t3 is less than $t7
 		j invalidString				 #jumps to invalidString
+		
+		#loops through each character of the subtring
 		continue2:
+			lb $t2, 0($t5)			 #loads the char in $t5 to $t2
+			jal checkChar
+			beq $v1, 0, invalidString	 #goes to invalidString if $v1 is 0
+			jal subprogram_1	
+			sll $s2, $s2, 4			 #shift left $s2 by 1 byte
+			add $s2, $s2, $t2
+			addi $t5, $t5, 1		 #$t5 = $t5 + 1
+			beq $t5, $t4, continue3		 #jumps back to loop
 		#-------------------------------------------------------------------
 		#To be continued
 			
@@ -119,6 +134,7 @@
 			jr $ra
 	
 	#converts hexadecimal number to its decimal value
+	#converts each character into decimal value
 	subprogram_1: 			 
 		blt $t2, 58, conv1		 	 #branches to conv1 if value at $t5 < 58
 		blt $t2, 71, conv2		 	 #branches to conv2 if value at $t5 < 71
