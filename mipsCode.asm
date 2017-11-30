@@ -26,7 +26,8 @@
 		li $t5, 0 				 #initializing $t5 to be 0
 							 #later used for storing start of required substring
 		li $t1, 0				 #used to update if the substring is last or not
-		
+		li $t8, 0				 #used for moving the stack pointer
+		#---------------------
 		#goes through the userInput
 		#divides the input into substrings for conversion
 		loop:
@@ -52,6 +53,7 @@
 			loopStartIndex:
 				add $t0, $s1, $t5		 #adds $s1 and $s2 and stores it in $t0
 				lb $t2, 0($t0)			 #loads the content of $t0 into $t2
+
 				beq $t2, 9, continue		 #jumps to cont if $t2 == tab
 				beq $t2, ' ', continue		 #jumps to cont if character is space
 				j loopEndIndex			 #jumps to loopEndIndex
@@ -63,22 +65,39 @@
   			
   			#gives the address of the last character of the substring
   			#the last character is not the actual last character
-  			addi $t4, $t6, 0 			 #adds $t6 and 0 and stores the value in $t4
+  
   			loopEndIndex:
-  				add $t0, $s1, $t4		 #adds $s1 and $t4 and stores in $t0		 
-				lb $t2, 0($t0)			 #loads the char at $t0 into $t2
-				beq $t2, 9, continue1
-				beq $t2, ' ', continue1
+  				addi $t4, $t6, 0 			 #adds $t6 and 0 and stores the value in $t4
+  				
+  				#finds the last character which is not space or tab
+  				endIndex:
+  					add $t0, $s1, $t4		 #adds $s1 and $t4 and stores in $t0		 
+					lb $t2, 0($t0)			 #loads the char at $t0 into $t2
+					beq $t2, 9, continue1
+					beq $t2, ' ', continue1
 				
-				#calls the sub_Program2
-				jal subProgram_2	
-				
-				beq $t1, 1, subProgram_3	 #goes to subProgram_3 if $t1 == 1
-				
-				continue1:	 
-				
-				addi $t4, $t4, -1
-				j loopEndIndex
+					#calls the sub_Program2
+					#li $v0, 11
+					#add $t0, $s1, $t4
+					#lb $a0, 0($t0)
+					#syscal
+					
+					
+					jal subProgram_2		 #calls subProgram_2
+					
+					#storing in stack
+					#-------------------	
+					sw $ra, 0($sp)
+					addi $sp, $sp, -4
+					#--------------------
+					
+					beq $t1, 1, subProgram_3	 #goes to subProgram_3 if $t1 == 1
+					
+					addi $t9, $t9, -4		 #it's for stack
+					
+					continue1:	 
+					addi $t4, $t4, -1
+					j endIndex
 			#endIndex is in $t4
 			
 			continue3:
@@ -90,11 +109,6 @@
 	Exit:
 		li $v0, 10
 		syscall
-	
-	invalidString:
-		li $v0, 4
-		la $a0, errorMessage
-		jr $ra
 					
 	#displays the errorMessage and jumps to Exit
 	noInput:
@@ -105,6 +119,11 @@
 	
 	#displays the output
 	subProgram_3:
+		#---------------------
+		lw $s2, 0($sp)
+		#---------------------
+		#needs to pop from the stack until the end
+		#This part needs to fixed
 		li $v0, 1
 		addi $a3, $s2, 0
 		syscall
@@ -132,6 +151,11 @@
 				j Exit
 		j continue3
 	
+	#stores errorMessage into $s2 and jumps and returns addres to where it was called
+	invalidString:
+		la $s2, errorMessage
+		jr $ra
+		
 	#converts a single hexadecimal string to a decimal string	
 	subProgram_2:
 		li $s2, 0 				 #initializing $s2 to be 0
@@ -139,7 +163,8 @@
 							 
 		#checking the length of the substring and checking its validity
 		sub $t3, $t4, $t5			 #subtracts $t4 from $t5 and stores the result in $t3
-		li $t7, 8
+		
+		li $t7, 9
 		blt $t3, $t7, continue2			 #goes to continue2 if $t3 is less than $t7
 		j invalidString				 #jumps to invalidString
 		
@@ -147,15 +172,18 @@
 		continue2:
 			add $t0, $s1, $t5
 			lb $t2, 0($t0)			 #loads the char in $t5 to $t2
-			jal checkChar
+			jal checkChar			 #calls checkChar and returns value at $v1
 			beq $v1, 0, invalidString	 #goes to invalidString if $v1 is 0
 			jal subprogram_1	
 			sll $s2, $s2, 4			 #shift left $s2 by 1 byte
 			add $s2, $s2, $t2
 			addi $t5, $t5, 1		 #$t5 = $t5 + 1
-			beq $t5, $t4, subProgram_3
-			beq $t5, $t4, continue3		 #jumps back to loop
-		#-------------------------------------------------------------------
+			beq $t5, $t4, return		 #jumps back to loop
+			j continue2
+			
+			#jumps back to where subProgram_2 was called with the stored value in $s2
+			return:
+			jr $ra
 			
 	#checks validity of the characters	
 	checkChar:
