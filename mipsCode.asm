@@ -70,8 +70,9 @@
 				beq $t2, 9, continue1
 				beq $t2, ' ', continue1
 				
+				#calls the sub_Program2
 				jal subProgram_2	
-	
+				
 				beq $t1, 1, subProgram_3	 #goes to subProgram_3 if $t1 == 1
 				
 				continue1:	 
@@ -107,9 +108,31 @@
 		li $v0, 1
 		addi $a3, $s2, 0
 		syscall
+		
+		#checks for overflow
+		#checks for unsinged
+		blt $t3, $zero, signedToUnsigned #branch to signedToUnsigned if $t3 < $zero
+			li $v0, 1			 #syscall for printing integer
+			addi $a0, $t3, 0		 #adds contents of $t3 and 0 and stores in $a0
+			syscall
+			j Exit				 #jumps to Exit
+			
+			signedToUnsigned:
+				li $t1, 10			 #initiates $t1 = 10
+				divu $t3, $t1			 #divides $t4 by $t1
+				mflo $t2			 #contents of $LO are moved to $t2
+				move $a0, $t2 			 #moves contents of $a0 to $t2
+				li $v0, 1			 #system call code for printing integer
+				syscall
+
+				mfhi $t2			 #contents of $HI are moved to $t2
+				move $a0, $t2 			 #moves contents of $t2 to $a0
+				li $v0, 1			 #system call code for priting integer
+				syscall
+				j Exit
 		j continue3
 	
-	#converts a single hexadecimal string to a decimal string		
+	#converts a single hexadecimal string to a decimal string	
 	subProgram_2:
 		li $s2, 0 				 #initializing $s2 to be 0
 							 #the converted decimal value will be stored here
@@ -133,7 +156,6 @@
 			beq $t5, $t4, subProgram_3
 			beq $t5, $t4, continue3		 #jumps back to loop
 		#-------------------------------------------------------------------
-		#To be continued
 			
 	#checks validity of the characters	
 	checkChar:
