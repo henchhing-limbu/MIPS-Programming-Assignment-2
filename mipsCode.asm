@@ -25,7 +25,6 @@
 							 #later used for storing end of substring
 		li $t5, 0 				 #initializing $t5 to be 0
 							 #later used for storing start of required substring
-		li $t1, 0				 #used to update if the substring is last or not
 		li $t8, 0				 #used for moving the stack pointer
 		#---------------------
 		#goes through the userInput
@@ -44,6 +43,7 @@
 			#it's the end of the substring
 			
 			#used for knowing the last substring
+			li $t1, 0				 #used to update if the substring is last or not
 			lastSubString:
 				addi $t1,$t1, 1			 #$t1 = $t1 + 1
 				j loopStartIndex
@@ -82,33 +82,34 @@
 					#lb $a0, 0($t0)
 					#syscal
 					
+					#calls subProgram_2 whenever the character is not a space or a tab
+					#conversion begins here
+					jal subProgram_2		 
 					
-					jal subProgram_2		 #calls subProgram_2
+					#converted decimal value or errorMessage is in $s2
+					#output is given by subProgram_3
+					#beq $t1, 1, subProgram_3	 #goes to subProgram_3 if $t1 == 1
+					jal subProgram_3
 					
-					#storing in stack
-					#-------------------	
-					sw $ra, 0($sp)
-					addi $sp, $sp, -4
-					#--------------------
-					
-					beq $t1, 1, subProgram_3	 #goes to subProgram_3 if $t1 == 1
-					
-					addi $t9, $t9, -4		 #it's for stack
-					
-					continue1:	 
+					continue1: 
+					#decreses by 1 so as to check each character from behind	 
 					addi $t4, $t4, -1
 					j endIndex
 			#endIndex is in $t4
 			
 			continue3:
-			addi $t6, $t6, 1			 #incrementing $t6 by 1
+			li $t5, 1			 	#jumps to exit the program
+			beq $t1, $t5, Exit		 	#goes to Exit if $t1 == $t5 i.e. if it was the last Substring
+					
+			addi $t6, $t6, 1			 #points to next character after comma
+								 #$t6 = $t6 + 1
 			addi $t5, $t6, 0			 #$t5 = $t6	
+			j loop
 		
-		
-	#informs system to end main
-	Exit:
-		li $v0, 10
-		syscall
+		#informs system to end main
+		Exit:
+			li $v0, 10
+			syscall
 					
 	#displays the errorMessage and jumps to Exit
 	noInput:
@@ -119,37 +120,35 @@
 	
 	#displays the output
 	subProgram_3:
-		#---------------------
-		lw $s2, 0($sp)
-		#---------------------
-		#needs to pop from the stack until the end
-		#This part needs to fixed
-		li $v0, 1
-		addi $a3, $s2, 0
-		syscall
-		
+		#loading data from the stack
+		#we add 4 in this case
+		#-----
+		lw $t3, 0($sp)				#loads the word on stack to $t3		 
+		addi $sp, $sp, 4			#moves the pointer to contiguous address of stack
+		#--------
 		#checks for overflow
 		#checks for unsinged
-		blt $t3, $zero, signedToUnsigned #branch to signedToUnsigned if $t3 < $zero
-			li $v0, 1			 #syscall for printing integer
-			addi $a0, $t3, 0		 #adds contents of $t3 and 0 and stores in $a0
-			syscall
-			j Exit				 #jumps to Exit
+		blt $t3, $zero, signedToUnsigned 	 #branch to signedToUnsigned if $t3 < $zero
+		
+		li $v0, 1			 	#syscall for printing integer
+		addi $a0, $t3, 0		 	#adds contents of $t3 and 0 and stores in $a0
+		syscall
+		
+		j continue3				 #jumps to Exit
 			
-			signedToUnsigned:
-				li $t1, 10			 #initiates $t1 = 10
-				divu $t3, $t1			 #divides $t4 by $t1
-				mflo $t2			 #contents of $LO are moved to $t2
-				move $a0, $t2 			 #moves contents of $a0 to $t2
-				li $v0, 1			 #system call code for printing integer
-				syscall
+		signedToUnsigned:
+			li $t1, 10			 #initiates $t1 = 10
+			divu $t3, $t1			 #divides $t4 by $t1
+			mflo $t2			 #contents of $LO are moved to $t2
+			move $a0, $t2 			 #moves contents of $a0 to $t2
+			li $v0, 1			 #system call code for printing integer
+			syscall
 
-				mfhi $t2			 #contents of $HI are moved to $t2
-				move $a0, $t2 			 #moves contents of $t2 to $a0
-				li $v0, 1			 #system call code for priting integer
-				syscall
-				j Exit
-		j continue3
+			mfhi $t2			 #contents of $HI are moved to $t2
+			move $a0, $t2 			 #moves contents of $t2 to $a0
+			li $v0, 1			 #system call code for priting integer
+			syscall
+			j continue3
 	
 	#stores errorMessage into $s2 and jumps and returns addres to where it was called
 	invalidString:
@@ -174,7 +173,7 @@
 			lb $t2, 0($t0)			 #loads the char in $t5 to $t2
 			jal checkChar			 #calls checkChar and returns value at $v1
 			beq $v1, 0, invalidString	 #goes to invalidString if $v1 is 0
-			jal subprogram_1	
+			jal subprogram_1
 			sll $s2, $s2, 4			 #shift left $s2 by 1 byte
 			add $s2, $s2, $t2
 			addi $t5, $t5, 1		 #$t5 = $t5 + 1
@@ -183,6 +182,12 @@
 			
 			#jumps back to where subProgram_2 was called with the stored value in $s2
 			return:
+			addi $sp, $sp, -4
+			sw $s2, 0($sp)
+			#addi $sp, $sp, -4
+			#sw $v0, ($sp)
+			#la $ra, ($s7)
+			#jr $ra
 			jr $ra
 			
 	#checks validity of the characters	
