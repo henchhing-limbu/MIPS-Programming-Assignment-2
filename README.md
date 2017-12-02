@@ -6,3 +6,5 @@ This MIPS program gets input from the user. The input, which is a string, is the
 * Commas or tabs found inside substrings are considered invalid ("123  456")
 * Program prints out the string of "too large" if the substring has more than 8 characters.
 * Empty strings before the first comma, between commas or after the last comma are also considered "NaN"
+
+Note: You can use QtSpim or MARS to run this program.
