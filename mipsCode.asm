@@ -172,8 +172,8 @@
 		
 		#converts signed decimal values to usigned and prints them	
 		signedToUnsigned:
-			li $t1, 10			 #initiates $t1 = 10
-			divu $t3, $t1			 #divides $t4 by $t1
+			li $t8, 10			 #initiates $t8 = 10
+			divu $t3, $t8			 #divides $t4 by $t1
 			mflo $t2			 #contents of $LO are moved to $t2
 			move $a0, $t2 			 #moves contents of $a0 to $t2
 			li $v0, 1			 #system call code for printing integer
